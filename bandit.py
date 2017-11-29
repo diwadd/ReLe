@@ -32,6 +32,7 @@ class KMultiBandit:
             if self.bandits[i].q_star_a > self.optimal_bandit:
                 self.optimal_bandit = self.bandits[i].q_star_a
 
+
     def run_simulation(self, t_stop=10, epsilon=0.0):
 
         self.t_stop = t_stop
@@ -47,7 +48,7 @@ class KMultiBandit:
             r_t = self.bandits[a_index].get_reward()
 
             self.total_reward = self.total_reward + r_t
-            self.total_reward_vs_time[t] = self.total_reward
+            self.total_reward_vs_time[t] = r_t
 
             self.a_reward_sum[a_index] = self.a_reward_sum[a_index] + r_t
             self.n_a_calls[a_index] = self.n_a_calls[a_index] + 1.0
