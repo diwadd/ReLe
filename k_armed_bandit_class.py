@@ -5,7 +5,7 @@ class KArmedBandit:
 
     def __init__(self,
                  mu=0.0,
-                 var=0.0):
+                 var=1.0):
 
         self.action_value = random.gauss(mu, var)
 
