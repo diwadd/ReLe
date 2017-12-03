@@ -12,11 +12,12 @@ class KArmedBanditTestbed:
 
         self.max_time = max_time
         self.n_problems = n_problems
-        self.bandit_threads = [None for i in range(n_problems)]
+        self.bandit_threads = [None for i in range(self.n_problems)]
 
         # A Python list is thread safe. We will use
         # it to track the average reward.
-        self.avg_reward = [0.0 for i in range(max_time)]
+        self.avg_reward = [0.0 for i in range(self.max_time + 1)]
+        self.optimal_action_percent = [0.0 for i in range(self.max_time + 1)]
 
         # bandit_problem_class specific kwargs.
         self.kwargs = kwargs
@@ -26,6 +27,7 @@ class KArmedBanditTestbed:
         self.kwargs["max_time"] = self.max_time
         self.kwargs["n_problems"] = self.n_problems
         self.kwargs["avg_reward"] = self.avg_reward
+        self.kwargs["optimal_action_percent"] = self.optimal_action_percent
 
         # Construct the problems. Each problem
         # is in fact a single thread.
@@ -42,7 +44,8 @@ class KArmedBanditTestbed:
             self.bandit_threads[i].join()
 
         # Calculate the average over all the problems.
-        for t in range(self.max_time):
+        for t in range(1, self.max_time + 1):
             self.avg_reward[t] = self.avg_reward[t]/self.n_problems
+            self.optimal_action_percent[t] = 100.0*self.optimal_action_percent[t]/self.n_problems
 
-        return self.avg_reward
+        return self.avg_reward, self.optimal_action_percent

@@ -35,7 +35,9 @@ class KArmedBanditEpsilonGreedy(KArmedBanditProblem):
 
         # self.print_bandit_optimal_rewards()
 
-        for t in range(self.max_time):
+        # Time is counted from 1 to self.max_time.
+        # Range work ony to self.max_time if no + 1.
+        for t in range(1, self.max_time + 1):
 
             # Get max action at time t. a_t is the index of the action.
             # With probability epsilon select random action.
@@ -43,6 +45,11 @@ class KArmedBanditEpsilonGreedy(KArmedBanditProblem):
                 a_t, _ = max(enumerate(self.Q_a), key=operator.itemgetter(1))
             else:
                 a_t = random.randint(0, self.k - 1)
+
+            if a_t == self.optimal_action_index:
+                self.optimal_action_counter = self.optimal_action_counter + 1
+                self.optimal_action_percent[t] = self.optimal_action_percent[t] + float(self.optimal_action_counter/t)
+                #self.optimal_action_percent[t] = self.optimal_action_percent[t] + 1.0
 
             # Perform action a_t. Pull the arm of the
             # a_t-th bandit.

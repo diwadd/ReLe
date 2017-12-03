@@ -1,5 +1,6 @@
 import threading
 import logging
+import math
 
 import k_armed_bandit_class as kabc
 
@@ -34,13 +35,26 @@ class KArmedBanditProblem(threading.Thread):
         self.k = kwargs["k"]
         self.max_time = kwargs["max_time"]
         self.avg_reward = kwargs["avg_reward"]
+        self.avg_reward = kwargs["avg_reward"]
+        self.optimal_action_percent = kwargs["optimal_action_percent"]
 
         self.bandits = [kabc.KArmedBandit() for i in range(self.k)]
+        self.optimal_action_index = self.get_optimal_action_index()
+        self.optimal_action_counter = 0
 
         # Q_a - initial estimate for action a.
         self.Q_a = [0.0 for i in range(self.k)]
         self.N_a = [0.0 for i in range(self.k)]
 
+    def get_optimal_action_index(self):
+
+        optimal_action_index = None
+        optimal_action = -math.inf
+        for i in range(self.k):
+            if self.bandits[i].action_value > optimal_action:
+                optimal_action = self.bandits[i].action_value
+                optimal_action_index = i
+        return optimal_action_index
 
     def print_bandit_optimal_rewards(self):
         s = ""
