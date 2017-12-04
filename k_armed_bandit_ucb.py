@@ -37,23 +37,15 @@ class KArmedBanditUCB(KArmedBanditProblem):
         # Range work ony to self.max_time if no + 1.
         for t in range(1, self.max_time + 1):
 
-            # Get max action at time t. a_t is the index of the action.
-            # With probability epsilon select random action.
-            # if random.random() > self.epsilon:
-            #     a_t, _ = max(enumerate(self.Q_a), key=operator.itemgetter(1))
-            # else:
-            #     a_t = random.randint(0, self.k - 1)
-
-            # if t==0:
-            #     Q_ucb = [self.Q_a[i] for i in range(self.k)]
-            # else:
-            #     Q_ucb = [self.Q_a[i] + self.c * math.sqrt(math.log(t) / self.N_a[i]) for i in range(self.k)]
-
+            # The Upper Confidence Bound of choosing the most
+            # optimal action.
             Q_ucb = [self.Q_a[i] for i in range(self.k)]
             for i in range(self.k):
                 if self.N_a[i] != 0:
                     Q_ucb[i] = Q_ucb[i] + self.c * math.sqrt(math.log(t) / self.N_a[i])
                 else:
+                    # If N_a[i] = 0 then a given by index i is the
+                    # maximizing action.
                     Q_ucb[i] = Q_ucb[i] + math.inf
 
             a_t, _ = max(enumerate(Q_ucb), key=operator.itemgetter(1))
