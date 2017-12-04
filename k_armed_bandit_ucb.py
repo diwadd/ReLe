@@ -1,9 +1,11 @@
 import random
 import operator
 import logging
+import math
 from k_armed_bandit_problem import KArmedBanditProblem
 
-class KArmedBanditEpsilonGreedy(KArmedBanditProblem):
+class KArmedBanditUCB(KArmedBanditProblem):
+    # UCB - Upper Confidence Bound
 
     def __init__(self,
                  group=None,
@@ -21,10 +23,12 @@ class KArmedBanditEpsilonGreedy(KArmedBanditProblem):
                                      kwargs=kwargs,
                                      daemon=daemon)
 
-        if "epsilon" in kwargs:
-            self.epsilon = kwargs["epsilon"]
+        if "c" in kwargs:
+            self.c = kwargs["c"]
         else:
-            self.epsilon = 0.0
+            # With c = 0.0 UCB is equivalent to
+            # the epsilon greedy solver.
+            self.c = 0.0
 
     def solve(self):
         logging.debug("Starting solver...")
@@ -35,10 +39,24 @@ class KArmedBanditEpsilonGreedy(KArmedBanditProblem):
 
             # Get max action at time t. a_t is the index of the action.
             # With probability epsilon select random action.
-            if random.random() > self.epsilon:
-                a_t, _ = max(enumerate(self.Q_a), key=operator.itemgetter(1))
-            else:
-                a_t = random.randint(0, self.k - 1)
+            # if random.random() > self.epsilon:
+            #     a_t, _ = max(enumerate(self.Q_a), key=operator.itemgetter(1))
+            # else:
+            #     a_t = random.randint(0, self.k - 1)
+
+            # if t==0:
+            #     Q_ucb = [self.Q_a[i] for i in range(self.k)]
+            # else:
+            #     Q_ucb = [self.Q_a[i] + self.c * math.sqrt(math.log(t) / self.N_a[i]) for i in range(self.k)]
+
+            Q_ucb = [self.Q_a[i] for i in range(self.k)]
+            for i in range(self.k):
+                if self.N_a[i] != 0:
+                    Q_ucb[i] = Q_ucb[i] + self.c * math.sqrt(math.log(t) / self.N_a[i])
+                else:
+                    Q_ucb[i] = Q_ucb[i] + math.inf
+
+            a_t, _ = max(enumerate(Q_ucb), key=operator.itemgetter(1))
 
             if a_t == self.optimal_action_index:
                 self.optimal_action_counter = self.optimal_action_counter + 1
