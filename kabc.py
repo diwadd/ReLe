@@ -44,8 +44,8 @@ class GreedySolutionMethod(KABProblemSolutionMethod):
     """
 
     """
-    def init(self):
-        pass
+    def __init__(self, step_size=None):
+        self.step_size = step_size
 
     def set_initial_values(self, k):
         return [0.0 for i in range(k)]
@@ -61,15 +61,19 @@ class GreedySolutionMethod(KABProblemSolutionMethod):
         N_a[a] = N_a[a] + 1
 
     def update_estimated_value_of_action(self, Q_t_a=[], N_a=[], a=0, R_t=0):
+        if self.step_size is None:
             Q_t_a[a] = Q_t_a[a] + (1.0/N_a[a])*(R_t - Q_t_a[a])
+        else:
+            Q_t_a[a] = Q_t_a[a] + self.step_size*(R_t - Q_t_a[a])
 
 
 class EpsilonSolutionMethod(GreedySolutionMethod):
     """
 
     """
-    def __init__(self, epsilon=0.1):
+    def __init__(self, epsilon=0.1, step_size=None):
         self.epsilon = epsilon
+        GreedySolutionMethod.__init__(self, step_size=step_size)
 
     def select_action(self, Q_t_a):
         p = random.uniform(0.0, 1.0)
@@ -87,9 +91,9 @@ class OIVSolutionMethod(EpsilonSolutionMethod):
     """
     Optimistic Initial Values (OIV) - solution method
     """
-    def __init__(self, epsilon=0.0, iv=5.0):
+    def __init__(self, iv=5.0, epsilon=0.0, step_size=None):
         self.iv = iv
-        EpsilonSolutionMethod.__init__(self, epsilon=epsilon)
+        EpsilonSolutionMethod.__init__(self, epsilon=epsilon, step_size=step_size)
 
     def set_initial_values(self, k):
         return [self.iv for i in range(k)]
@@ -144,9 +148,8 @@ class KArmedBanditProblem(threading.Thread):
         # printd("optimal_action: {0}".format(self.optimal_action))
 
         # n_optimal_action  - number of times the optimal action was chosen.
-        self.n_optimal_action = 0
         self.avg_reward = 0.0
-        self.avg_reward_at_t = [0.0 for i in range(self.t_start, self.t_stop + 1)]
+        self.reward_at_t = [0.0 for i in range(self.t_start, self.t_stop + 1)]
         self.percent_optimal_action = [0.0 for i in range(self.t_start, self.t_stop + 1)]
 
         self._return = None
@@ -159,22 +162,19 @@ class KArmedBanditProblem(threading.Thread):
             # printd("a: {0} R_t: {1}".format(a, R_t))
 
             self.solution_method.update_number_of_times_action_was_chosen(N_a=self.N_a, a=a)
-            self.solution_method.update_estimated_value_of_action(Q_t_a=self.Q_t_a, N_a=self.N_a, a=a, R_t=R_t)
+            self.solution_method.update_estimated_value_of_action(Q_t_a=self.Q_t_a,
+                                                                  N_a=self.N_a,
+                                                                  a=a,
+                                                                  R_t=R_t)
 
             # Update statistics
-            self.avg_reward_at_t[t - 1] = R_t
-
-            # It is also interesting to see the cumulative reward.
-            # self.avg_reward = self.avg_reward + R_t
-            # self.avg_reward_at_t[t-1] = self.avg_reward/t
-
+            self.reward_at_t[t - 1] = R_t
             # printd("average reward at t: {0}". format(self.avg_reward_at_t[t-1]))
 
             if a == self.optimal_action:
-                self.n_optimal_action = self.n_optimal_action + 1
-                self.percent_optimal_action[t-1] = 100 # 100.0*self.n_optimal_action/t
+                self.percent_optimal_action[t-1] = 100
 
-        return self.avg_reward_at_t, self.percent_optimal_action
+        return self.reward_at_t, self.percent_optimal_action
 
     def run(self):
         printd("{0}".format(threading.current_thread()))
@@ -222,8 +222,8 @@ class KArmedBanditTestbed:
             self.results[p] = self.n_problems[p].join()
 
         for p in range(self.n):
-            avg_reward_at_t_p, percent_optimal_action_p = self.results[p]
-            self.avg_reward_at_t_testbed = self.avg_reward_at_t_testbed + np.array(avg_reward_at_t_p)
+            reward_at_t_p, percent_optimal_action_p = self.results[p]
+            self.avg_reward_at_t_testbed = self.avg_reward_at_t_testbed + np.array(reward_at_t_p)
             self.percent_optimal_action_testbed = self.percent_optimal_action_testbed + np.array(percent_optimal_action_p)
 
         self.avg_reward_at_t_testbed = self.avg_reward_at_t_testbed/self.n
@@ -252,9 +252,13 @@ if __name__ == "__main__":
     e0p01_kab_tb = KArmedBanditTestbed(solution_method=e0p01_sm, n=n, t_stop=t_stop)
     e0p01_avg_reward_at_t_testbed, e0p01_percent_optimal_action_testbed = e0p01_kab_tb.run()
 
-    oiv_sm = OIVSolutionMethod(iv=5.0)
+    oiv_sm = OIVSolutionMethod(iv=5.0, epsilon=0.0, step_size=0.1)
     oiv_kab_tb = KArmedBanditTestbed(solution_method=oiv_sm, n=n, t_stop=t_stop)
     oiv_avg_reward_at_t_testbed, oiv_percent_optimal_action_testbed = oiv_kab_tb.run()
+
+    e0p1_step0p1_sm = EpsilonSolutionMethod(epsilon=0.1, step_size=0.1)
+    e0p1_step0p1_kab_tb = KArmedBanditTestbed(solution_method=e0p1_step0p1_sm, n=n, t_stop=t_stop)
+    e0p1_step0p1_avg_reward_at_t_testbed, e0p1_step0p1_percent_optimal_action_testbed = e0p1_step0p1_kab_tb.run()
 
     plt.plot(greedy_avg_reward_at_t_testbed, 'g')
     plt.plot(e0p1_avg_reward_at_t_testbed, 'b')
@@ -271,7 +275,7 @@ if __name__ == "__main__":
     plt.show()
 
     plt.plot(oiv_percent_optimal_action_testbed, 'b')
-    plt.plot(e0p1_percent_optimal_action_testbed, 'k')
+    plt.plot(e0p1_step0p1_percent_optimal_action_testbed, 'k')
     plt.ylabel("Optimal action [%]")
     plt.ylim(0, 110)
     plt.show()
