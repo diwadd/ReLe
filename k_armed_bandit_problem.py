@@ -2,7 +2,7 @@ import threading
 import logging
 import math
 
-import k_armed_bandit_class as kabc
+import kabc
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -16,7 +16,6 @@ class KArmedBanditProblem(threading.Thread):
     specific solvers that inherite from this class.
 
     """
-
 
     def __init__(self,
                  group=None,
@@ -56,15 +55,15 @@ class KArmedBanditProblem(threading.Thread):
         optimal_action_index = None
         optimal_action = -math.inf
         for i in range(self.k):
-            if self.bandits[i].action_value > optimal_action:
-                optimal_action = self.bandits[i].action_value
+            if self.bandits[i].expected_reward > optimal_action:
+                optimal_action = self.bandits[i].expected_reward
                 optimal_action_index = i
         return optimal_action_index
 
     def print_bandit_optimal_rewards(self):
         s = ""
         for i in range(self.k):
-            s = s + "bandit: {0}, action_value: {1}, ".format(i, self.bandits[i].action_value)
+            s = s + "bandit: {0}, action_value: {1}, ".format(i, self.bandits[i].expected_reward)
         logging.debug(s)
 
     def solve(self):

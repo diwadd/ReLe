@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from k_armed_bandit_testbed import KArmedBanditTestbed
+from kab_testbed import KArmedBanditTestbed
 from k_armed_bandit_ucb import KArmedBanditUCB
 
 k = 10
