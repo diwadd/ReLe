@@ -32,11 +32,19 @@ class KArmedBanditLever:
 class KABProblemSolutionMethod(ABC):
 
     @abstractmethod
-    def set_initial_values(self, k):
+    def set_initial_values(self):
         pass
 
     @abstractmethod
-    def select_action(self, ):
+    def select_action(self):
+        pass
+
+    @abstractmethod
+    def update_number_of_times_action_was_chosen(self):
+        pass
+
+    @abstractmethod
+    def update_estimated_value_of_action(self):
         pass
 
 
@@ -99,9 +107,20 @@ class OIVSolutionMethod(EpsilonSolutionMethod):
         return [self.iv for i in range(k)]
 
 
-class UCBSolutionMethod:
+class UCBSolutionMethod(OIVSolutionMethod):
     """
     Upper Confidence Bound (UCB) - solution method
+    """
+    def __init__(self, c=1.0, iv=5.0, epsilon=0.0, step_size=None):
+        self.c = c
+        OIVSolutionMethod.__init__(self, iv=iv, epsilon=epsilon, step_size=step_size)
+
+    def select_action(self, Q_t_a):
+        pass
+
+class GBSolutionMethod:
+    """
+    Gradient Bandit - solution method
     """
     pass
 
