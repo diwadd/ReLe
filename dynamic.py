@@ -1,4 +1,5 @@
 import math
+import copy
 from logger import *
 
 
@@ -10,7 +11,7 @@ class State:
         self.i = min(max(0, i), BOARD_SIZE - 1)
         self.j = min(max(0, j), BOARD_SIZE - 1) 
         self.n = n
-        self.id = i * n + j
+        self.id = self.i * n + self.j
 
     def __str__(self) -> str:
         return f"{self.i} {self.j} {self.id}"
@@ -54,6 +55,13 @@ def make_states(terminal_states=DEFAULT_TERMINAL_STATES):
 
     return states
 
+def print_matrix(v):
+
+    for i in range(len(v)):
+        for j in range(len(v[i])):
+            s = str( round(v[i][j], 1) ).ljust(4, " ")
+            print(f"{s} ", end=" ")
+        print()
 
 def approximate_state_value_function_for_random_policy(s, approx_v, terminal_states=DEFAULT_TERMINAL_STATES):
 
@@ -69,32 +77,43 @@ def approximate_state_value_function_for_random_policy(s, approx_v, terminal_sta
         nj = s.j + a.dj
 
         r = -1
-        gamma = 0.5
+        gamma = 1.0
         s_prime = State(ni, nj)
 
-        if s_prime in terminal_states:
-            r = 0.0
+        # if s_prime in terminal_states:
+        #     r = 0.0
 
-        printd(f"a: {a} s: {s} -> s_prime: {s_prime} r: {r}")
+        # printd(f"a: {a} s: {s} -> s_prime: {s_prime} r: {r}")
 
-        v_s += r + gamma*approx_v[s_prime.i][s_prime.j]
+        v_s += (1.0/4.0)*(r + gamma*approx_v[s_prime.i][s_prime.j])
 
-    printd(f"v_s: {v_s}")
+    # printd(f"v_s: {v_s}")
     return v_s
 
 
 def evaluate_policy(approx_v, states, theta=0.001):
 
+    k = 0
     while True:
+
+        print(f"k = {k}")
+        print_matrix(approx_v)
+        k += 1
+
         delta = 0.0
 
+        new_approx_v = copy.deepcopy(approx_v)
         for s in states:
-            printd(f"Processing state: {s}")
-            v = approx_v[s.i][s.j]
-            approx_v[s.i][s.j] = approximate_state_value_function_for_random_policy(s, approx_v)
-            delta = max(delta, abs(v - approx_v[s.i][s.j]))
 
-        printd(f"delta: {delta}")
+            v = approx_v[s.i][s.j]
+            new_approx_v[s.i][s.j] = approximate_state_value_function_for_random_policy(s, approx_v)
+
+            # printd(f"Processing state: {s} v: {v} approx_v[s.i][s.j]: {approx_v[s.i][s.j]} --> {v - approx_v[s.i][s.j]}")
+
+            delta = max(delta, abs(v - new_approx_v[s.i][s.j]))
+
+        approx_v = copy.deepcopy(new_approx_v)
+        # printd(f"delta: {delta}")
 
         if delta < theta:
             break
@@ -109,4 +128,4 @@ approx_v = [[0.0 for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
 states = make_states()
 printd(states)
 
-evaluate_policy(approx_v, states, theta=0.001)
+evaluate_policy(approx_v, states, theta=0.0001)
