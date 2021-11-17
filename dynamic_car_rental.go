@@ -130,10 +130,10 @@ func approximate_state_value_function(state State,
 
 	var r float64 = 0.0
 
-	r += float64( abs_int(action) ) * CAR_MOVE_PRICE
+	r -= float64( abs_int(action) ) * CAR_MOVE_PRICE
 
-    var cars_loc_one_morning int = min_int(max_int(state.i - action, 0), MAX_CARS_AT_ANY_LOC)
-    var cars_loc_two_morning int = min_int(max_int(state.j - action, 0), MAX_CARS_AT_ANY_LOC)
+    var cars_loc_one_morning int = max_int(min_int(state.i - action, MAX_CARS_AT_ANY_LOC), 0)
+    var cars_loc_two_morning int = max_int(min_int(state.j + action, MAX_CARS_AT_ANY_LOC), 0)
 
 	for rented_one := 0; rented_one <= MAX_POISSON_REQS_FIRST_LOC; rented_one++ {
 		for rented_two := 0; rented_two <= MAX_POISSON_REQS_SECOND_LOC; rented_two++ {
@@ -148,15 +148,15 @@ func approximate_state_value_function(state State,
 
 					// fmt.Println("-> ", rented_one, " ", rented_two, " ", returned_one, " ", returned_two)
 
-                    var cars_at_eob_one int = min_int(cars_loc_one_morning - actual_rented_cars_one + returned_one, MAX_CARS_AT_ANY_LOC)
-                    var cars_at_eob_two int = min_int(cars_loc_one_morning - actual_rented_cars_one + returned_one, MAX_CARS_AT_ANY_LOC)
+                    var cars_at_eob_one int = max_int(min_int(cars_loc_one_morning - actual_rented_cars_one + returned_one, MAX_CARS_AT_ANY_LOC), 0)
+                    var cars_at_eob_two int = max_int(min_int(cars_loc_two_morning - actual_rented_cars_two + returned_two, MAX_CARS_AT_ANY_LOC), 0)
 
 					var p float64 = poisson_first_rental_req[rented_one] *
 									poisson_second_rental_req[rented_two] *
 									poisson_first_rental_ret[returned_one] *
 									poisson_second_rental_ret[returned_two]
 
-					r = r + p * (earnings + gamma * value[cars_at_eob_one][cars_at_eob_two])
+					r += p * (earnings + gamma * value[cars_at_eob_one][cars_at_eob_two])
 				}
 			}
 		}
@@ -186,7 +186,7 @@ func evaluate_policy(value *[MAX_CARS_AT_ANY_LOC+1][MAX_CARS_AT_ANY_LOC+1]float6
 
 			// fmt.Println("m: ", m, " len(states): ", len(states))
 
-			var i int = states[m].i 
+			var i int = states[m].i
 			var j int = states[m].j
 			var action int = policy[i][j]
 
@@ -336,10 +336,16 @@ func save_2d_int_array_to_file(filename string,
         return
     }
     defer f.Close()
-    for i := 0; i < MAX_CARS_AT_ANY_LOC+1; i++ {
+    // for i := 0; i < MAX_CARS_AT_ANY_LOC+1; i++ {
+	for i := MAX_CARS_AT_ANY_LOC; i >= 0; i-- {
 		for j := 0; j < MAX_CARS_AT_ANY_LOC+1; j++ {
 
-			_, err = f.WriteString(fmt.Sprintf("%d ", array_2d[i][j]))
+			if array_2d[i][j] < 0 {
+				_, err = f.WriteString(fmt.Sprintf("%d ", array_2d[i][j]))
+			} else {
+				_, err = f.WriteString(fmt.Sprintf(" %d ", array_2d[i][j]))
+			}
+			
 			if err != nil {
 				fmt.Printf("error writing string: %v", err)
 			}
@@ -360,10 +366,16 @@ func save_2d_float64_array_to_file(filename string,
         return
     }
     defer f.Close()
-    for i := 0; i < MAX_CARS_AT_ANY_LOC+1; i++ {
+    // for i := 0; i < MAX_CARS_AT_ANY_LOC+1; i++ {
+    for i := MAX_CARS_AT_ANY_LOC; i >= 0; i-- {
 		for j := 0; j < MAX_CARS_AT_ANY_LOC+1; j++ {
 
-			_, err = f.WriteString(fmt.Sprintf("%f ", array_2d[i][j]))
+			if array_2d[i][j] < 0 {
+				_, err = f.WriteString(fmt.Sprintf("%f ", array_2d[i][j]))
+			} else {
+				_, err = f.WriteString(fmt.Sprintf(" %f ", array_2d[i][j]))
+			}
+
 			if err != nil {
 				fmt.Printf("error writing string: %v", err)
 			}
